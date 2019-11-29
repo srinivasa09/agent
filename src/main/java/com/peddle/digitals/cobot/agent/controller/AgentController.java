@@ -6,7 +6,11 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +45,10 @@ public class AgentController {
 	@RequestMapping(value = "/executescript", method = RequestMethod.POST)
 	public @ResponseBody
 	String uploadFileHandler(@RequestParam("File") MultipartFile file,
-			@RequestParam("body") String body,@RequestParam("jobId") String jobid) {
+			@RequestParam("Body") String body,@RequestParam("JobId") String jobid,
+			@RequestParam("CallBackURL") String callBackURL, @RequestParam("FileName") String fileName) {
 
-		String name = file.getOriginalFilename();
+		String name = fileName;
 		if (!file.isEmpty()) {
 			try {
 				
@@ -64,15 +69,18 @@ public class AgentController {
 				stream.write(bytes);
 				stream.close();
 				
+				JSONObject obj = new JSONObject(body);
+				String testClassName = obj.getString("TestCase");
+				
 				
 				URLClassLoader child = new URLClassLoader(
 				        new URL[] {serverFile.toURI().toURL()},
 				        this.getClass().getClassLoader()
 				);
-				Class classToLoad = Class.forName("com.cobot.testcases.JiraAddUserTest", true, child);
-				Method method =  classToLoad.getMethod("test", String.class, String.class);
+				Class classToLoad = Class.forName(testClassName, true, child);
+				Method method =  classToLoad.getMethod("test", String.class, String.class,String.class);
 				Object instance = classToLoad.newInstance();
-				Object result = method.invoke(instance,body, jobid);
+				Object result = method.invoke(instance,body, jobid,callBackURL);
 				
 //				JarClassLoader jcl = new JarClassLoader();
 //				
@@ -105,6 +113,7 @@ public class AgentController {
 					+ " because the file was empty.";
 		}
 	}
+	
 	
 //	/**
 //	 * Upload multiple file using Spring Controller
