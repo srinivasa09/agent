@@ -6,10 +6,10 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.jar.Attributes;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import org.xeustechnologies.jcl.JarClassLoader;
-import org.xeustechnologies.jcl.JclObjectFactory;
 
 
 
@@ -69,18 +67,43 @@ public class AgentController {
 				stream.write(bytes);
 				stream.close();
 				
+				
+				File root = new File(rootPath); 
+
 				JSONObject obj = new JSONObject(body);
-				String testClassName = obj.getString("TestCase");
-				
-				
+				JSONArray jsonArray = obj.getJSONArray("data");
+				List<Object> list = jsonArray.toList();
+				List<String> data= new ArrayList<String> ();
+
+				for(Object a: list){
+					data.add(String.valueOf(a));
+				} 
+
 				URLClassLoader child = new URLClassLoader(
-				        new URL[] {serverFile.toURI().toURL()},
-				        this.getClass().getClassLoader()
-				);
-				Class classToLoad = Class.forName(testClassName, true, child);
-				Method method =  classToLoad.getMethod("test", String.class, String.class,String.class);
+						new URL[] { root.toURI().toURL() }, 
+						this.getClass().getClassLoader()
+						);
+
+				String scriptclassFile = name.replace(".class","");
+
+				Class classToLoad = Class.forName(scriptclassFile, true, child);
+				Method method =  classToLoad.getMethod("runTest", java.util.List.class,String.class,String.class);
 				Object instance = classToLoad.newInstance();
-				Object result = method.invoke(instance,body, jobid,callBackURL);
+				Object result = method.invoke(instance,data,callBackURL,jobid);
+				
+				
+//				JSONObject obj = new JSONObject(body);
+//				String testClassName = obj.getString("TestCase");
+//				
+//				
+//				URLClassLoader child = new URLClassLoader(
+//				        new URL[] {serverFile.toURI().toURL()},
+//				        this.getClass().getClassLoader()
+//				);
+//				Class classToLoad = Class.forName(testClassName, true, child);
+//				Method method =  classToLoad.getMethod("test", String.class, String.class,String.class);
+//				Object instance = classToLoad.newInstance();
+//				Object result = method.invoke(instance,body, jobid,callBackURL);
 				
 //				JarClassLoader jcl = new JarClassLoader();
 //				
