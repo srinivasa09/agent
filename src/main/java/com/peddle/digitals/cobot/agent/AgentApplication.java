@@ -9,8 +9,11 @@ import io.github.bonigarcia.wdm.WebDriverManager;
 public class AgentApplication {
 
 	public static void main(String[] args) {
+		
 		SpringApplication.run(AgentApplication.class, args);
 		WebDriverManager.chromedriver().setup();
+		WebDriverManager.firefoxdriver().setup();
+		
 	}
 
 }
