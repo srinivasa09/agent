@@ -13,13 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.jmx.Agent;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.system.ApplicationHome;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,16 +27,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.peddle.digitals.cobot.agent.AgentApplication;
-
-
-
 /**
  * Handles requests for the application file upload requests
  */
 @Controller
 @RequestMapping("/agent/api")
 public class AgentController {
+	
+	
+	@Value("${secclient.oauth2.client.clientId}")
+	String clientId;
+	
+	@Value("${secclient.oauth2.client.clientSecret}")
+	String clientSecret;
+	
+	@Value("${secclient.oauth2.client.accessTokenUri}")
+	String accessTokenUri;
+	
+	@Value("${secclient.oauth2.client.scope}")
+	String scope;
 
 	@Autowired
 	private Environment env;
@@ -97,10 +105,10 @@ public class AgentController {
 
 				String scriptclassFile = name.replace(".class","");
 
-				//				Class classToLoad = Class.forName(scriptclassFile, true, child);
-				//				Method method =  classToLoad.getMethod("runTest", java.util.List.class,String.class,String.class);
-				//				Object instance = classToLoad.newInstance();
-				//				Object result = method.invoke(instance,data,callBackURL,jobid);
+//								Class classToLoad = Class.forName(scriptclassFile, true, child);
+//								Method method =  classToLoad.getMethod("runTest", java.util.List.class,String.class,String.class);
+//								Object instance = classToLoad.newInstance();
+//								Object result = method.invoke(instance,data,callBackURL,jobid);
 
 
 				//String scriptclassFile = name.replace(".class","");
@@ -117,11 +125,12 @@ public class AgentController {
 
 				logger.info(seliniumJarPath);
 
-				Process runscript = Runtime.getRuntime().exec("java -cp \"" + seliniumJarPath +";"+
+				Process runscript = Runtime.getRuntime().exec("java -cp \"" + seliniumJarPath +";"+classpath+";"+
 						rootPath +"\" "+scriptclassFile + " "+body+" "+
-						cromeDriverpath+" "+callBackURL+" "+ jobid);
-
-
+						cromeDriverpath+" "+callBackURL+" "+ jobid + " " + accessTokenUri
+						+ " "+clientId+" "+clientSecret+" "+scope);
+				
+				
 				StreamReader errorReader = new 
 						StreamReader(runscript.getErrorStream(), "ERROR");            
 
@@ -184,7 +193,7 @@ public class AgentController {
 				logger.info("Server File Location="
 						+ serverFile.getAbsolutePath());
 
-				return "You successfully uploaded file=" + name;
+				return "Your successfully uploaded file=" + name;
 			} catch (Exception e) {
 				e.printStackTrace();
 				logger.error(e.getMessage(), e);
